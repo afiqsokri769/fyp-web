@@ -34,52 +34,134 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null
 }
 
-// Generate mock chart data
-const generateWeeklyData = () => {
-  const weeks = []
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i * 7)
-    weeks.push({
-      week: `W${8 - i}`,
-      bookings: Math.floor(Math.random() * 20) + 5,
-    })
-  }
-  return weeks
+const WEEK_COUNT = 8
+const REG_MONTHS = 6
+
+const formatShortDate = (date) =>
+  date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' })
+
+const formatCategoryLabel = (category) =>
+  category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+const toDate = (value) => {
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
 }
 
-const categoryData = [
-  { name: 'Maintenance', value: 45 },
-  { name: 'Repair', value: 20 },
-  { name: 'Performance', value: 15 },
-  { name: 'Topset', value: 20 },
-]
+const buildWeeklyData = (bookings, weeksCount = WEEK_COUNT) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-const registrationData = Array.from({ length: 6 }, (_, i) => {
-  const d = new Date()
-  d.setMonth(d.getMonth() - (5 - i))
-  return {
-    month: d.toLocaleString('default', { month: 'short' }),
-    customers: Math.floor(Math.random() * 15) + 3,
-  }
-})
+  const start = new Date(today)
+  start.setDate(start.getDate() - (weeksCount * 7 - 1))
+
+  const buckets = Array.from({ length: weeksCount }, (_, i) => {
+    const bucketStart = new Date(start)
+    bucketStart.setDate(start.getDate() + i * 7)
+    const bucketEnd = new Date(bucketStart)
+    bucketEnd.setDate(bucketStart.getDate() + 6)
+    return {
+      start: bucketStart,
+      end: bucketEnd,
+      label: formatShortDate(bucketStart),
+      bookings: 0,
+    }
+  })
+
+  bookings.forEach((booking) => {
+    const bookingDate = toDate(booking.booking_date || booking.created_at)
+    if (!bookingDate) return
+    bookingDate.setHours(0, 0, 0, 0)
+    for (const bucket of buckets) {
+      if (bookingDate >= bucket.start && bookingDate <= bucket.end) {
+        bucket.bookings += 1
+        break
+      }
+    }
+  })
+
+  return buckets.map((bucket) => ({ week: bucket.label, bookings: bucket.bookings }))
+}
+
+const buildCategoryData = (bookings) => {
+  const counts = {}
+  bookings.forEach((booking) => {
+    const items = booking.booking_services || []
+    items.forEach((item) => {
+      const category = item?.services?.category
+      if (!category) return
+      const qty = Number(item.quantity) || 1
+      counts[category] = (counts[category] || 0) + qty
+    })
+  })
+
+  return Object.entries(counts).map(([category, value]) => ({
+    name: formatCategoryLabel(category),
+    value,
+  }))
+}
+
+const buildRegistrationData = (customers, monthsCount = REG_MONTHS) => {
+  const base = new Date()
+  base.setDate(1)
+  base.setHours(0, 0, 0, 0)
+
+  const start = new Date(base)
+  start.setMonth(start.getMonth() - (monthsCount - 1))
+
+  const buckets = Array.from({ length: monthsCount }, (_, i) => {
+    const monthStart = new Date(start)
+    monthStart.setMonth(start.getMonth() + i)
+    return {
+      year: monthStart.getFullYear(),
+      month: monthStart.getMonth(),
+      label: monthStart.toLocaleString('default', { month: 'short' }),
+      customers: 0,
+    }
+  })
+
+  customers.forEach((customer) => {
+    const createdAt = toDate(customer.created_at)
+    if (!createdAt) return
+    const bucket = buckets.find(
+      (b) => b.year === createdAt.getFullYear() && b.month === createdAt.getMonth()
+    )
+    if (bucket) bucket.customers += 1
+  })
+
+  return buckets.map((bucket) => ({ month: bucket.label, customers: bucket.customers }))
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [recentBookings, setRecentBookings] = useState([])
   const [recentInquiries, setRecentInquiries] = useState([])
+  const [weeklyData, setWeeklyData] = useState([])
+  const [categoryData, setCategoryData] = useState([])
+  const [registrationData, setRegistrationData] = useState([])
   const [loading, setLoading] = useState(true)
-  const weeklyData = generateWeeklyData()
 
   useEffect(() => {
+    const dateFrom = new Date()
+    dateFrom.setDate(dateFrom.getDate() - (WEEK_COUNT * 7 - 1))
+    const dateFromStr = dateFrom.toISOString().split('T')[0]
+
     Promise.all([
       api.get('/admin/stats'),
       api.get('/admin/bookings', { params: { limit: 5 } }),
       api.get('/admin/inquiries', { params: { limit: 5 } }),
-    ]).then(([statsRes, bookingsRes, inquiriesRes]) => {
+      api.get('/admin/bookings', { params: { limit: 1000, date_from: dateFromStr } }),
+      api.get('/admin/customers', { params: { limit: 1000 } }),
+    ]).then(([statsRes, bookingsRes, inquiriesRes, chartBookingsRes, customersRes]) => {
+      const chartBookings = chartBookingsRes.data.data || []
+      const customers = customersRes.data.data || []
+
       setStats(statsRes.data)
       setRecentBookings(bookingsRes.data.data || [])
       setRecentInquiries(inquiriesRes.data.data || [])
+      setWeeklyData(buildWeeklyData(chartBookings))
+      setCategoryData(buildCategoryData(chartBookings))
+      setRegistrationData(buildRegistrationData(customers))
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
@@ -129,17 +211,21 @@ export default function AdminDashboard() {
         {/* Pie Chart */}
         <div className="glass-card p-6">
           <h3 className="font-display font-semibold text-lg text-[var(--text-primary)] mb-4">Service Categories</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                {categoryData.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend formatter={(value) => <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{value}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
+          {categoryData.length === 0 ? (
+            <p className="text-sm text-[var(--text-muted)] font-body">No booking data yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                  {categoryData.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend formatter={(value) => <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{value}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 

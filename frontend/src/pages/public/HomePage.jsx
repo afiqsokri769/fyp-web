@@ -7,6 +7,14 @@ import { AccordionItem } from '../../components/ui/Accordion'
 import serviceService from '../../services/serviceService'
 import { ROUTES, WORKSHOP_INFO } from '../../utils/constants'
 
+// Same static fallback as ServicesPage
+const STATIC_SERVICES = [
+  { id: '1', name_en: 'Engine Oil Change', name_bm: 'Tukar Minyak Enjin', category: 'maintenance', description: 'Full synthetic or semi-synthetic engine oil replacement with filter check.', price_min: 30, price_max: 60, duration_minutes: 30, image_url: '/images/services/oil-change.jpg', is_active: true },
+  { id: '2', name_en: 'Topset Service', name_bm: 'Servis Topset', category: 'topset', description: 'Complete topset overhaul including piston ring, valve seal, gasket, and carbon cleaning.', price_min: 150, price_max: 350, duration_minutes: 180, image_url: '/images/services/topset.jpg', is_active: true },
+  { id: '3', name_en: 'Brake Pad Replacement', name_bm: 'Tukar Pad Brek', category: 'maintenance', description: 'Front and rear brake pad inspection and replacement with quality parts.', price_min: 40, price_max: 100, duration_minutes: 45, image_url: '/images/services/brake.jpg', is_active: true },
+  { id: '5', name_en: 'Performance Carburetor Tuning', name_bm: 'Penalaan Karburator Prestasi', category: 'performance', description: 'Fine-tune your LC 135 carburetor for optimal power and fuel efficiency.', price_min: 80, price_max: 200, duration_minutes: 90, image_url: '/images/services/carb.jpg', is_active: true },
+]
+
 // Animated counter
 function Counter({ target, suffix = '' }) {
   const [count, setCount] = useState(0)
@@ -70,7 +78,15 @@ export default function HomePage() {
   const [openFaq, setOpenFaq] = useState(null)
 
   useEffect(() => {
-    serviceService.getServices().then((res) => setServices(res.data.slice(0, 4))).catch(() => {})
+    serviceService.getServices()
+      .then((res) => {
+        if (res.data && res.data.length > 0) {
+          setServices(res.data.slice(0, 4))
+        } else {
+          setServices(STATIC_SERVICES.slice(0, 4))
+        }
+      })
+      .catch(() => setServices(STATIC_SERVICES.slice(0, 4)))
   }, [])
 
   return (
@@ -79,15 +95,14 @@ export default function HomePage() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-primary)] via-[var(--bg-primary)] to-[var(--bg-secondary)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-primary)]/80 via-[var(--bg-primary)]/60 to-[var(--bg-secondary)]" />
+          {/* Hero motorcycle image */}
+          <img
+            src="/images/hero-motorcycle.png"
+            alt="LC 135 Motorcycle"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-30 mix-blend-luminosity"
+          />
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[var(--accent-primary)]/5 rounded-full blur-3xl" />
-          {/* Motorcycle silhouette SVG */}
-          <svg className="absolute bottom-0 right-0 w-1/2 opacity-5" viewBox="0 0 800 400" fill="none">
-            <path d="M600 300 C600 300 650 200 700 180 C750 160 780 200 780 200 L760 300 Z" fill="currentColor" className="text-[var(--accent-primary)]" />
-            <circle cx="650" cy="300" r="80" stroke="currentColor" strokeWidth="20" className="text-[var(--accent-primary)]" fill="none" />
-            <circle cx="750" cy="300" r="80" stroke="currentColor" strokeWidth="20" className="text-[var(--accent-primary)]" fill="none" />
-            <path d="M400 280 L600 280 L650 200 L550 180 L480 220 L400 220 Z" fill="currentColor" className="text-[var(--accent-primary)]" />
-          </svg>
         </div>
 
         <Particles />

@@ -78,12 +78,13 @@ async def login(data: LoginRequest, request: Request):
         mfa_required = profile.get("mfa_enabled", False)
 
         if mfa_required:
-            # Send OTP and return mfa_required flag
+            # Send OTP email and return mfa_required flag
+            # Don't return the token yet — user must verify OTP first
             send_otp_email(data.email)
             return {
                 "mfa_required": True,
                 "email": data.email,
-                "message": "OTP sent to your email. Please verify to complete login.",
+                "message": "OTP sent to your email. Please enter the 6-digit code to complete login.",
             }
 
         return {

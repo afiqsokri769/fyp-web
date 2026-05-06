@@ -48,7 +48,7 @@ async def get_all_customers(
     current_user: dict = Depends(require_admin),
     search: Optional[str] = None,
     status: Optional[str] = None,
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ):
     """Get all customers with search and filter."""
@@ -100,13 +100,13 @@ async def get_all_bookings(
     status: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ):
     """Get all bookings with filters."""
     try:
         query = supabase_admin.table("bookings").select(
-            "*, profiles!customer_id(full_name, email), booking_services(*, services(name_en))",
+            "*, profiles!customer_id(full_name, email), booking_services(*, services(name_en, category))",
             count="exact"
         )
 
