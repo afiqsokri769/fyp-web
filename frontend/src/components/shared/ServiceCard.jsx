@@ -48,13 +48,15 @@ export default function ServiceCard({ service, selectable, selected, onSelect })
       whileHover={{ y: -3, boxShadow: '0 20px 60px var(--accent-glow)' }}
       onClick={selectable ? () => onSelect?.(service) : undefined}
     >
-      {/* Image — always use local path, no error state needed */}
+      {/* Image — eager load for first visible cards, lazy for rest */}
       <div className="w-full h-40 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/5">
         <img
           src={imageSrc}
           alt={service.name_en}
           className="w-full h-full object-cover"
-          loading="lazy"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
         />
       </div>
 

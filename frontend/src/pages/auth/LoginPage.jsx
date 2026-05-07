@@ -37,9 +37,12 @@ export default function LoginPage() {
         return
       }
 
-      const loggedInUser = await login(user, access_token)
+      // login() is synchronous — returns the normalized user immediately
+      const loggedInUser = login(user, access_token)
 
-      const redirect = returnTo || (loggedInUser?.role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD)
+      // Use role from the returned user object
+      const role = loggedInUser?.role || user?.role || 'customer'
+      const redirect = returnTo || (role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD)
       navigate(redirect, { replace: true })
     } catch (err) {
       setShake(true)

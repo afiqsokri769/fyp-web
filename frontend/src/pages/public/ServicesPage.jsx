@@ -5,11 +5,11 @@ import serviceService from '../../services/serviceService'
 import { SERVICE_CATEGORIES } from '../../utils/constants'
 
 const containerVariants = {
-  animate: { transition: { staggerChildren: 0.07 } },
+  animate: { transition: { staggerChildren: 0.04 } },  // reduced from 0.07
 }
 const itemVariants = {
-  initial: { opacity: 0, scale: 0.94, y: 20 },
-  animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 20 } },
+  initial: { opacity: 0, y: 12 },  // reduced movement
+  animate: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24, duration: 0.25 } },
 }
 
 // Fallback static services — shown when DB has no data yet

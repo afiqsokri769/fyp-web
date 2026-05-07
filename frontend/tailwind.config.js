@@ -5,15 +5,15 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          orange: '#FF6B00',
-          'orange-light': '#FF9240',
+          red: '#E8000E',
+          'red-light': '#FF2D3A',
           dark: '#0A0A0F',
           card: '#111118',
           admin: '#3B82F6',
         },
       },
       fontFamily: {
-        display: ['Rajdhani', 'sans-serif'],
+        display: ['Barlow Condensed', 'Rajdhani', 'sans-serif'],
         body: ['Plus Jakarta Sans', 'sans-serif'],
       },
       animation: {
@@ -30,8 +30,8 @@ module.exports = {
           to: { opacity: 1, transform: 'translateY(0)' },
         },
         glowPulse: {
-          '0%,100%': { boxShadow: '0 0 20px rgba(255,107,0,0.3)' },
-          '50%': { boxShadow: '0 0 40px rgba(255,107,0,0.6)' },
+          '0%,100%': { boxShadow: '0 0 20px rgba(232,0,14,0.3)' },
+          '50%': { boxShadow: '0 0 40px rgba(232,0,14,0.6)' },
         },
       },
       backdropBlur: { xs: '2px' },

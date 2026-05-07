@@ -27,7 +27,7 @@ CREATE TABLE public.profiles (
 -- ------------------------------------------------
 CREATE TABLE public.services (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name_en TEXT NOT NULL,
+  name_en TEXT NOT NULL UNIQUE,
   name_bm TEXT,
   category TEXT NOT NULL CHECK (category IN ('maintenance', 'repair', 'performance', 'topset', 'general')),
   description TEXT,

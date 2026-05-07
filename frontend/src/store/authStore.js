@@ -8,38 +8,27 @@ const normalizeUser = (user) => {
   return { role: user.role || 'customer', ...user }
 }
 
-const fetchMe = (token) =>
-  axios.get(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-
 const useAuthStore = create((set, get) => ({
-  user: null,           // { id, email, full_name, role, avatar_url, mfa_enabled }
-  token: null,          // JWT access token
-  isLoading: true,      // True while checking initial auth state
+  user: null,
+  token: null,
+  isLoading: true,
   isAuthenticated: false,
 
-  login: async (user, token) => {
+  // Synchronous login — sets state immediately, no async fetch
+  // The user object from the login API response already has the role
+  login: (user, token) => {
+    const normalized = normalizeUser(user)
     localStorage.setItem('ccm_token', token)
-    set({ token, isAuthenticated: true, isLoading: true })
-
-    const fallbackUser = normalizeUser(user)
-    try {
-      const response = await fetchMe(token)
-      const normalized = normalizeUser(response.data)
-      set({ user: normalized, token, isAuthenticated: true, isLoading: false })
-      return normalized
-    } catch {
-      set({ user: fallbackUser, token, isAuthenticated: true, isLoading: false })
-      return fallbackUser
-    }
+    set({ user: normalized, token, isAuthenticated: true, isLoading: false })
+    return normalized
   },
 
   logout: () => {
     localStorage.removeItem('ccm_token')
-    localStorage.removeItem('ccm_refresh_token')
     set({ user: null, token: null, isAuthenticated: false, isLoading: false })
   },
 
-  setUser: (user) => set({ user }),
+  setUser: (user) => set({ user: normalizeUser(user) }),
 
   setLoading: (isLoading) => set({ isLoading }),
 
@@ -51,7 +40,9 @@ const useAuthStore = create((set, get) => ({
     }
 
     try {
-      const response = await fetchMe(token)
+      const response = await axios.get(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       set({
         user: normalizeUser(response.data),
         token,
@@ -59,6 +50,7 @@ const useAuthStore = create((set, get) => ({
         isLoading: false,
       })
     } catch {
+      // Token invalid or expired — clear it silently
       localStorage.removeItem('ccm_token')
       set({ user: null, token: null, isAuthenticated: false, isLoading: false })
     }

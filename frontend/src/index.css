@@ -12,10 +12,10 @@
   --bg-glass: rgba(255, 255, 255, 0.04);
   --bg-glass-hover: rgba(255, 255, 255, 0.08);
 
-  /* Accent — Racing Orange */
-  --accent-primary: #FF6B00;
-  --accent-glow: rgba(255, 107, 0, 0.3);
-  --accent-secondary: #FF9240;
+  /* Accent — Racing RED */
+  --accent-primary: #E8000E;
+  --accent-glow: rgba(232, 0, 14, 0.35);
+  --accent-secondary: #FF2D3A;
 
   /* Text */
   --text-primary: #F0F0F5;
@@ -30,14 +30,14 @@
 
   /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-active: rgba(255, 107, 0, 0.4);
+  --border-active: rgba(232, 0, 14, 0.45);
 
   /* Admin Accent — Electric Blue */
   --admin-accent: #3B82F6;
   --admin-glow: rgba(59, 130, 246, 0.3);
 
   /* Typography */
-  --font-display: 'Rajdhani', sans-serif;
+  --font-display: 'Barlow Condensed', 'Rajdhani', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
@@ -53,7 +53,7 @@
   --text-secondary: #444455;
   --text-muted: #888899;
   --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-active: rgba(255, 107, 0, 0.5);
+  --border-active: rgba(232, 0, 14, 0.5);
 }
 
 [data-theme="light"] .glass-card {
@@ -64,8 +64,8 @@
 
 [data-theme="light"] .glass-card:hover {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 107, 0, 0.4);
-  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.15);
+  border-color: rgba(232, 0, 14, 0.4);
+  box-shadow: 0 8px 32px rgba(232, 0, 14, 0.15);
 }
 
 [data-theme="light"] .input-field {
@@ -83,21 +83,11 @@
   color: #AAAABC;
 }
 
-[data-theme="light"] ::-webkit-scrollbar-track {
-  background: #EBEBF0;
-}
-
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-}
+[data-theme="light"] ::-webkit-scrollbar-track { background: #EBEBF0; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); }
 
 [data-theme="light"] .skeleton {
-  background: linear-gradient(
-    90deg,
-    #E8E8EE 25%,
-    #F0F0F5 50%,
-    #E8E8EE 75%
-  );
+  background: linear-gradient(90deg, #E8E8EE 25%, #F0F0F5 50%, #E8E8EE 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -111,9 +101,7 @@
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg-primary);
@@ -127,6 +115,9 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* ================================================
@@ -137,7 +128,7 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -157,14 +148,15 @@ h1, h2, h3, h4, h5, h6 {
    BUTTONS
    ================================================ */
 .btn-primary {
-  background: linear-gradient(135deg, #FF6B00, #FF9240);
+  background: linear-gradient(135deg, #E8000E, #FF2D3A);
   color: white;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 28px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   border: none;
   cursor: pointer;
   box-shadow: 0 0 24px var(--accent-glow);
@@ -178,12 +170,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-primary:hover {
   transform: scale(1.04);
-  box-shadow: 0 0 40px var(--accent-glow);
+  box-shadow: 0 0 48px var(--accent-glow);
 }
 
-.btn-primary:active {
-  transform: scale(0.97);
-}
+.btn-primary:active { transform: scale(0.97); }
 
 .btn-primary:disabled {
   opacity: 0.5;
@@ -193,14 +183,15 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-ghost {
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 2px solid var(--border-subtle);
   color: var(--text-primary);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 28px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -213,21 +204,22 @@ h1, h2, h3, h4, h5, h6 {
 .btn-ghost:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
+  box-shadow: 0 0 20px var(--accent-glow);
 }
 
-.btn-ghost:active {
-  transform: scale(0.97);
-}
+.btn-ghost:active { transform: scale(0.97); }
 
 .btn-danger {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #EF4444;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 28px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -244,12 +236,13 @@ h1, h2, h3, h4, h5, h6 {
 .btn-admin {
   background: linear-gradient(135deg, #3B82F6, #60A5FA);
   color: white;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 28px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   border: none;
   cursor: pointer;
   box-shadow: 0 0 24px var(--admin-glow);
@@ -265,9 +258,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 40px var(--admin-glow);
 }
 
-.btn-admin:active {
-  transform: scale(0.97);
-}
+.btn-admin:active { transform: scale(0.97); }
 
 /* ================================================
    FORM INPUTS
@@ -276,7 +267,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   background: var(--bg-glass);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 16px;
   color: var(--text-primary);
   font-family: var(--font-body);
@@ -291,9 +282,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--bg-glass-hover);
 }
 
-.input-field::placeholder {
-  color: var(--text-muted);
-}
+.input-field::placeholder { color: var(--text-muted); }
 
 .input-field-admin:focus {
   border-color: var(--admin-accent);
@@ -308,23 +297,10 @@ h1, h2, h3, h4, h5, h6 {
 /* ================================================
    SCROLLBAR
    ================================================ */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
 
 /* ================================================
    SHIMMER SKELETON
@@ -360,8 +336,8 @@ h1, h2, h3, h4, h5, h6 {
    ================================================ */
 .particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   background: var(--accent-primary);
   border-radius: 50%;
   animation: floatUp linear infinite;
@@ -369,7 +345,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes floatUp {
-  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  0% { transform: translateY(0) scale(1); opacity: 0.9; }
   100% { transform: translateY(-100vh) scale(0); opacity: 0; }
 }
 
@@ -391,7 +367,7 @@ h1, h2, h3, h4, h5, h6 {
    UTILITY
    ================================================ */
 .text-gradient {
-  background: linear-gradient(135deg, #FF6B00, #FF9240);
+  background: linear-gradient(135deg, #E8000E, #FF2D3A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -404,17 +380,9 @@ h1, h2, h3, h4, h5, h6 {
   background-clip: text;
 }
 
-.glow-orange {
-  box-shadow: 0 0 30px var(--accent-glow);
-}
-
-.glow-blue {
-  box-shadow: 0 0 30px var(--admin-glow);
-}
-
-.border-glow {
-  border-color: var(--border-active);
-}
+.glow-red { box-shadow: 0 0 30px var(--accent-glow); }
+.glow-blue { box-shadow: 0 0 30px var(--admin-glow); }
+.border-glow { border-color: var(--border-active); }
 
 /* Touch targets */
 button, a, [role="button"] {

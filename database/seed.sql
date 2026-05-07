@@ -34,4 +34,12 @@ INSERT INTO public.services (name_en, name_bm, category, description, price_min,
   ('Performance Carburetor Tuning', 'Penalaan Karburator Prestasi', 'performance', 'Fine-tune your LC 135 carburetor for optimal power and fuel efficiency.', 80, 200, 90, 5),
   ('Full Engine Repair', 'Baik Pulih Enjin Penuh', 'repair', 'Comprehensive engine diagnosis and repair for major mechanical issues.', 300, 800, 300, 6),
   ('Tyre Change & Balancing', 'Tukar Tayar & Balans', 'maintenance', 'Front or rear tyre replacement and wheel balancing service.', 60, 180, 45, 7),
-  ('Electrical Diagnostic', 'Diagnostik Elektrik', 'repair', 'Full electrical system check including wiring, battery, and ignition system.', 50, 150, 60, 8);
+  ('Electrical Diagnostic', 'Diagnostik Elektrik', 'repair', 'Full electrical system check including wiring, battery, and ignition system.', 50, 150, 60, 8)
+ON CONFLICT (name_en) DO UPDATE SET
+  name_bm = EXCLUDED.name_bm,
+  category = EXCLUDED.category,
+  description = EXCLUDED.description,
+  price_min = EXCLUDED.price_min,
+  price_max = EXCLUDED.price_max,
+  duration_minutes = EXCLUDED.duration_minutes,
+  sort_order = EXCLUDED.sort_order;
