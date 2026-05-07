@@ -15,9 +15,14 @@ dist/
 build/
 *.egg-info/
 
-# Environment files — DO NOT commit real .env files
-# backend/.env
-# frontend/.env
+# !! NEVER commit real .env files — they contain secrets !!
+backend/.env
+frontend/.env
+.env
+
+# Keep .env.example files (they have no real secrets)
+!backend/.env.example
+!frontend/.env.example
 
 # Logs
 *.log
@@ -28,8 +33,12 @@ npm-debug.log*
 Thumbs.db
 
 # IDE
-.vscode/settings.json
 .idea/
 
-# Vite
+# Vite cache
 frontend/.vite/
+frontend/node_modules/
+
+# Python cache
+backend/__pycache__/
+backend/**/__pycache__/
