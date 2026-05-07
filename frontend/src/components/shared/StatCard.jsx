@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion'
 
-export default function StatCard({ icon: Icon, label, value, trend, color = 'orange', loading = false }) {
+export default function StatCard({ icon: Icon, label, value, trend, color = 'red', loading = false }) {
   const colorMap = {
-    orange: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10',
+    red: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10',
     blue: 'text-[var(--admin-accent)] bg-[var(--admin-accent)]/10',
     green: 'text-green-400 bg-green-500/10',
     yellow: 'text-yellow-400 bg-yellow-500/10',
-    red: 'text-red-400 bg-red-500/10',
+    orange: 'text-orange-400 bg-orange-500/10',
     purple: 'text-purple-400 bg-purple-500/10',
   }
 
-  const iconStyle = colorMap[color] || colorMap.orange
+  const iconStyle = colorMap[color] || colorMap.red
 
   if (loading) {
     return (

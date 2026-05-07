@@ -181,7 +181,7 @@ export default function AdminDashboard() {
       >
         {[
           { icon: Users, label: 'Total Customers', value: stats?.total_customers, color: 'blue' },
-          { icon: CalendarCheck, label: 'Bookings Today', value: stats?.bookings_today, color: 'orange' },
+          { icon: CalendarCheck, label: 'Bookings Today', value: stats?.bookings_today, color: 'red' },
           { icon: Clock, label: 'Pending Bookings', value: stats?.pending_bookings, color: 'yellow' },
           { icon: MessageSquare, label: 'Open Inquiries', value: stats?.open_inquiries, color: 'purple' },
           { icon: DollarSign, label: 'Revenue (Month)', value: stats ? `RM ${stats.revenue_this_month}` : null, color: 'green' },

@@ -3,40 +3,47 @@ from models.inquiry import InquiryReplyRequest, InquiryStatusUpdate
 from models.booking import BookingStatusUpdate
 from database import supabase_admin
 from middleware.auth_middleware import require_admin
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 router = APIRouter()
+
+# Thread pool for running sync Supabase calls concurrently
+_executor = ThreadPoolExecutor(max_workers=10)
+
+
+def run_query(fn):
+    """Run a synchronous Supabase query in a thread."""
+    return fn()
 
 
 @router.get("/stats")
 async def get_admin_stats(current_user: dict = Depends(require_admin)):
-    """Get dashboard statistics for admin."""
+    """Get dashboard statistics for admin — all queries run in parallel."""
     try:
-        # Total customers
-        customers = supabase_admin.table("profiles").select("id", count="exact").eq("role", "customer").execute()
-        total_customers = customers.count
-
-        # Total bookings today
         today = datetime.now().date()
-        bookings_today = supabase_admin.table("bookings").select("id", count="exact").eq("booking_date", str(today)).execute()
-
-        # Pending bookings
-        pending = supabase_admin.table("bookings").select("id", count="exact").eq("status", "pending").execute()
-
-        # Open inquiries
-        open_inquiries = supabase_admin.table("inquiries").select("id", count="exact").eq("status", "pending").execute()
-
-        # Revenue this month (estimated from completed bookings)
         first_day = today.replace(day=1)
-        completed = supabase_admin.table("bookings").select("total_estimated_price").eq("status", "completed").gte("created_at", str(first_day)).execute()
-        revenue = sum(float(b.get("total_estimated_price", 0) or 0) for b in completed.data)
+        loop = asyncio.get_event_loop()
+
+        # Run all 5 queries concurrently
+        results = await asyncio.gather(
+            loop.run_in_executor(_executor, lambda: supabase_admin.table("profiles").select("id", count="exact").eq("role", "customer").execute()),
+            loop.run_in_executor(_executor, lambda: supabase_admin.table("bookings").select("id", count="exact").eq("booking_date", str(today)).execute()),
+            loop.run_in_executor(_executor, lambda: supabase_admin.table("bookings").select("id", count="exact").eq("status", "pending").execute()),
+            loop.run_in_executor(_executor, lambda: supabase_admin.table("inquiries").select("id", count="exact").eq("status", "pending").execute()),
+            loop.run_in_executor(_executor, lambda: supabase_admin.table("bookings").select("total_estimated_price").eq("status", "completed").gte("created_at", str(first_day)).execute()),
+        )
+
+        customers_res, bookings_today_res, pending_res, inquiries_res, completed_res = results
+        revenue = sum(float(b.get("total_estimated_price", 0) or 0) for b in completed_res.data)
 
         return {
-            "total_customers": total_customers,
-            "bookings_today": bookings_today.count,
-            "pending_bookings": pending.count,
-            "open_inquiries": open_inquiries.count,
+            "total_customers": customers_res.count or 0,
+            "bookings_today": bookings_today_res.count or 0,
+            "pending_bookings": pending_res.count or 0,
+            "open_inquiries": inquiries_res.count or 0,
             "revenue_this_month": round(revenue, 2),
         }
     except Exception as e:
@@ -66,8 +73,8 @@ async def get_all_customers(
         result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
 
         return {
-            "data": result.data,
-            "total": result.count,
+            "data": result.data or [],
+            "total": result.count or 0,
             "limit": limit,
             "offset": offset,
         }
@@ -92,6 +99,19 @@ async def update_customer_status(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update customer status: {str(e)}")
+
+
+@router.delete("/customers/{customer_id}")
+async def delete_customer(
+    customer_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Delete a customer account."""
+    try:
+        supabase_admin.auth.admin.delete_user(customer_id)
+        return {"message": "Customer deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete customer: {str(e)}")
 
 
 @router.get("/bookings")
@@ -120,8 +140,8 @@ async def get_all_bookings(
         result = query.order("booking_date", desc=True).range(offset, offset + limit - 1).execute()
 
         return {
-            "data": result.data,
-            "total": result.count,
+            "data": result.data or [],
+            "total": result.count or 0,
             "limit": limit,
             "offset": offset,
         }
@@ -168,8 +188,8 @@ async def get_all_inquiries(
         result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
 
         return {
-            "data": result.data,
-            "total": result.count,
+            "data": result.data or [],
+            "total": result.count or 0,
             "limit": limit,
             "offset": offset,
         }
