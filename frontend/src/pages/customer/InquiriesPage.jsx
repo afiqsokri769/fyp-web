@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageSquare, Plus, ChevronDown } from 'lucide-react'
+import { MessageSquare, Plus, ChevronDown, Upload, X, Paperclip } from 'lucide-react'
 import { z } from 'zod'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import Input, { Textarea } from '../../components/ui/Input'
 import inquiryService from '../../services/inquiryService'
+import { uploadInquiryAttachment } from '../../services/storageService'
 import useAuthStore from '../../store/authStore'
 import useNotificationStore from '../../store/notificationStore'
 import { formatDate, formatRelativeTime } from '../../utils/formatters'
@@ -24,6 +25,8 @@ export default function InquiriesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [expandedId, setExpandedId] = useState(null)
+  const [attachmentFile, setAttachmentFile] = useState(null)
+  const [attachmentPreview, setAttachmentPreview] = useState(null)
   const { user } = useAuthStore()
   const { success: showSuccess, error: showError } = useNotificationStore()
 
@@ -40,18 +43,48 @@ export default function InquiriesPage() {
 
   useEffect(() => { fetchInquiries() }, [])
 
+  const handleAttachmentChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      showError('File must be under 10MB')
+      return
+    }
+    setAttachmentFile(file)
+    if (file.type.startsWith('image/')) {
+      setAttachmentPreview(URL.createObjectURL(file))
+    } else {
+      setAttachmentPreview(null)
+    }
+  }
+
   const onSubmit = async (data) => {
     setSubmitting(true)
     try {
+      let attachmentUrl = null
+
+      // Upload attachment if provided
+      if (attachmentFile) {
+        try {
+          attachmentUrl = await uploadInquiryAttachment(attachmentFile, user.id)
+        } catch {
+          showError('Attachment upload failed. Submitting without attachment.')
+        }
+      }
+
       await inquiryService.createInquiry({
         sender_name: user.full_name,
         sender_email: user.email,
         subject: data.subject,
-        message: data.message,
+        message: attachmentUrl
+          ? `${data.message}\n\n[Attachment: ${attachmentUrl}]`
+          : data.message,
         customer_id: user.id,
       })
       showSuccess('Inquiry submitted successfully!')
       setModalOpen(false)
+      setAttachmentFile(null)
+      setAttachmentPreview(null)
       reset()
       fetchInquiries()
     } catch {
@@ -153,8 +186,57 @@ export default function InquiriesPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
           <Input label="Subject" placeholder="What is your question about?" error={errors.subject?.message} required {...register('subject')} />
           <Textarea label="Message" placeholder="Describe your question in detail..." error={errors.message?.message} required {...register('message')} />
+
+          {/* Attachment Upload */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-[var(--text-secondary)] font-body">
+              Attachment <span className="text-[var(--text-muted)]">(optional)</span>
+            </label>
+
+            {attachmentPreview && (
+              <div className="relative w-full h-40 rounded-xl overflow-hidden border border-[var(--border-subtle)]">
+                <img src={attachmentPreview} alt="Attachment preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => { setAttachmentFile(null); setAttachmentPreview(null) }}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {attachmentFile && !attachmentPreview && (
+              <div className="flex items-center gap-3 p-3 rounded-xl glass-card">
+                <Paperclip size={16} className="text-[var(--accent-primary)]" />
+                <span className="text-sm text-[var(--text-secondary)] font-body flex-1 truncate">{attachmentFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachmentFile(null)}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {!attachmentFile && (
+              <label className="flex items-center gap-2 px-4 py-3 rounded-xl glass-card cursor-pointer hover:border-[var(--accent-primary)] transition-all text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] font-body">
+                <Upload size={16} />
+                Upload image or file
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={handleAttachmentChange}
+                />
+              </label>
+            )}
+            <p className="text-xs text-[var(--text-muted)] font-body">Images or PDF. Max 10MB.</p>
+          </div>
+
           <div className="flex gap-3">
-            <Button variant="ghost" type="button" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
+            <Button variant="ghost" type="button" onClick={() => { setModalOpen(false); setAttachmentFile(null); setAttachmentPreview(null) }} className="flex-1">Cancel</Button>
             <Button type="submit" loading={submitting} className="flex-1">Submit</Button>
           </div>
         </form>

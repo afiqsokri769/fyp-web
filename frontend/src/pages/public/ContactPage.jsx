@@ -90,10 +90,10 @@ export default function ContactPage() {
               <h2 className="font-display font-bold text-2xl text-[var(--text-primary)] mb-6">Workshop Details</h2>
               <div className="flex flex-col gap-5">
                 {[
-                  { icon: MapPin, label: 'Address', value: WORKSHOP_INFO.address },
-                  { icon: Phone, label: 'Phone', value: WORKSHOP_INFO.phone },
+                  { icon: MapPin, label: 'Alamat / Address', value: WORKSHOP_INFO.address },
+                  { icon: Phone, label: 'No. Bengkel', value: WORKSHOP_INFO.phone },
                   { icon: Mail, label: 'Email', value: WORKSHOP_INFO.email },
-                  { icon: Clock, label: 'Hours', value: `${WORKSHOP_INFO.hours}\n${WORKSHOP_INFO.closed}` },
+                  { icon: Clock, label: 'Waktu Operasi', value: `${WORKSHOP_INFO.hours}\n${WORKSHOP_INFO.closed}` },
                 ].map((item, i) => {
                   const Icon = item.icon
                   return (

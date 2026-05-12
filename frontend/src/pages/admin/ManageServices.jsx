@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { Plus, Edit2, Trash2, GripVertical, Image } from 'lucide-react'
+import { Plus, Edit2, Trash2, GripVertical, Image, Upload, X } from 'lucide-react'
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors
@@ -19,6 +19,7 @@ import Input, { Textarea } from '../../components/ui/Input'
 import ConfirmDialog from '../../components/shared/ConfirmDialog'
 import { serviceSchema } from '../../utils/validators'
 import serviceService from '../../services/serviceService'
+import { uploadServiceImage } from '../../services/storageService'
 import useNotificationStore from '../../store/notificationStore'
 import { formatPriceRange, formatDuration } from '../../utils/formatters'
 
@@ -85,6 +86,9 @@ export default function ManageServices() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const { success: showSuccess, error: showError } = useNotificationStore()
 
   const sensors = useSensors(
@@ -109,12 +113,16 @@ export default function ManageServices() {
 
   const openAdd = () => {
     setEditTarget(null)
+    setImageFile(null)
+    setImagePreview(null)
     reset({ is_active: true, duration_minutes: 60 })
     setModalOpen(true)
   }
 
   const openEdit = (service) => {
     setEditTarget(service)
+    setImageFile(null)
+    setImagePreview(service.image_url || null)
     reset({
       name_en: service.name_en,
       name_bm: service.name_bm || '',
@@ -128,17 +136,50 @@ export default function ManageServices() {
     setModalOpen(true)
   }
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      showError('Please select an image file')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showError('Image must be under 5MB')
+      return
+    }
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   const onSubmit = async (data) => {
     setSaving(true)
     try {
+      let imageUrl = editTarget?.image_url || null
+
+      // Upload new image if selected
+      if (imageFile) {
+        setUploadingImage(true)
+        try {
+          imageUrl = await uploadServiceImage(imageFile)
+        } catch (err) {
+          showError('Image upload failed. Saving without image.')
+        } finally {
+          setUploadingImage(false)
+        }
+      }
+
+      const serviceData = { ...data, image_url: imageUrl }
+
       if (editTarget) {
-        await serviceService.updateService(editTarget.id, data)
+        await serviceService.updateService(editTarget.id, serviceData)
         showSuccess('Service updated successfully')
       } else {
-        await serviceService.createService(data)
+        await serviceService.createService(serviceData)
         showSuccess('Service created successfully')
       }
       setModalOpen(false)
+      setImageFile(null)
+      setImagePreview(null)
       fetchServices()
     } catch {
       showError('Failed to save service')
@@ -254,6 +295,48 @@ export default function ManageServices() {
 
           <Input label="Duration (minutes)" type="number" error={errors.duration_minutes?.message} required admin {...register('duration_minutes', { valueAsNumber: true })} />
 
+          {/* Image Upload */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-[var(--text-secondary)] font-body">
+              Service Image
+            </label>
+            <div className="flex items-start gap-4">
+              {/* Preview */}
+              <div className="w-24 h-24 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-glass)] flex items-center justify-center flex-shrink-0">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <Image size={24} className="text-[var(--text-muted)]" />
+                )}
+              </div>
+              {/* Upload button */}
+              <div className="flex flex-col gap-2 flex-1">
+                <label className="btn-ghost text-sm cursor-pointer flex items-center gap-2 justify-center">
+                  <Upload size={16} />
+                  {imagePreview ? 'Change Image' : 'Upload Image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                </label>
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={() => { setImageFile(null); setImagePreview(null) }}
+                    className="text-xs text-red-400 hover:text-red-300 font-body flex items-center gap-1 justify-center"
+                  >
+                    <X size={12} /> Remove image
+                  </button>
+                )}
+                <p className="text-xs text-[var(--text-muted)] font-body">
+                  JPG, PNG or WebP. Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded accent-[var(--admin-accent)]" {...register('is_active')} />
             <span className="text-sm text-[var(--text-secondary)] font-body">Active (visible to customers)</span>
@@ -261,7 +344,9 @@ export default function ManageServices() {
 
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" type="button" onClick={() => setModalOpen(false)} className="flex-1">Cancel</Button>
-            <Button variant="admin" type="submit" loading={saving} className="flex-1">{editTarget ? 'Save Changes' : 'Add Service'}</Button>
+            <Button variant="admin" type="submit" loading={saving || uploadingImage} className="flex-1">
+              {uploadingImage ? 'Uploading...' : editTarget ? 'Save Changes' : 'Add Service'}
+            </Button>
           </div>
         </form>
       </Modal>

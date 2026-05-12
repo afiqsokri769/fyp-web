@@ -151,7 +151,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
           className="text-center mb-12"
         >
           <p className="text-[var(--accent-primary)] font-body text-sm font-semibold tracking-widest uppercase mb-2">What We Do</p>
@@ -162,7 +162,7 @@ export default function HomePage() {
           variants={containerVariants}
           initial="initial"
           whileInView="animate"
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.05 }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
           {services.length > 0
@@ -194,7 +194,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.05 }}
             className="text-center mb-12"
           >
             <h2 className="font-display font-bold text-4xl sm:text-5xl text-[var(--text-primary)]">WHY CHOOSE US</h2>
@@ -204,7 +204,7 @@ export default function HomePage() {
             variants={containerVariants}
             initial="initial"
             whileInView="animate"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.05 }}
             className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16"
           >
             {[
@@ -236,7 +236,7 @@ export default function HomePage() {
                 key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
+                viewport={{ once: true, amount: 0.05 }}
                 transition={{ delay: i * 0.1 }}
                 className="text-center"
               >
@@ -255,7 +255,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.05 }}
           className="text-center mb-10"
         >
           <h2 className="font-display font-bold text-4xl text-[var(--text-primary)]">COMMON QUESTIONS</h2>
@@ -285,16 +285,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row gap-6 text-center sm:text-left">
             <div>
-              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">Phone</p>
+              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">No. Bengkel</p>
               <p className="font-display font-semibold text-[var(--text-primary)]">{WORKSHOP_INFO.phone}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">Location</p>
-              <p className="font-display font-semibold text-[var(--text-primary)]">{WORKSHOP_INFO.address}</p>
+              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">Lokasi</p>
+              <p className="font-display font-semibold text-[var(--text-primary)]">{WORKSHOP_INFO.addressShort}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">Hours</p>
-              <p className="font-display font-semibold text-[var(--text-primary)]">Mon–Sat, 9AM–6PM</p>
+              <p className="text-xs text-[var(--text-muted)] font-body uppercase tracking-wider mb-1">Waktu Operasi</p>
+              <p className="font-display font-semibold text-[var(--text-primary)]">Isnin–Sabtu, 9PG–6PTG</p>
             </div>
           </div>
           <a
@@ -304,7 +304,7 @@ export default function HomePage() {
             className="btn-primary flex items-center gap-2 whitespace-nowrap"
           >
             <MapPin size={16} />
-            Get Directions
+            Dapatkan Arah
           </a>
         </div>
       </section>

@@ -22,7 +22,7 @@ export default function Footer() {
               {WORKSHOP_INFO.tagline}. Your trusted LC 135 specialist in Kuala Lumpur.
             </p>
             <div className="flex items-center gap-3">
-              <a href="#" aria-label="Facebook" className="p-2 rounded-lg glass-card hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-muted)] transition-all">
+              <a href={WORKSHOP_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="p-2 rounded-lg glass-card hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-muted)] transition-all">
                 <Facebook size={18} />
               </a>
               <a href="#" aria-label="Instagram" className="p-2 rounded-lg glass-card hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-muted)] transition-all">
@@ -86,7 +86,7 @@ export default function Footer() {
             © 2025 Cabin Crew Motorsport. All rights reserved.
           </p>
           <p className="text-xs text-[var(--text-muted)] font-body">
-            Built with ❤️ for FYP 2025
+            built by linkedin: Muhammad Talha Kausar 
           </p>
         </div>
       </div>
