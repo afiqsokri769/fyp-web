@@ -3,12 +3,21 @@ from models.auth import (
     RegisterRequest, LoginRequest, OTPVerifyRequest,
     ForgotPasswordRequest, ResetPasswordRequest, TokenResponse, RefreshTokenRequest
 )
-from database import supabase, supabase_admin
+from database import supabase_admin
+from config import settings
 from middleware.auth_middleware import get_current_user
 from utils.auth_helpers import check_rate_limit, record_failed_attempt, clear_attempts, get_client_ip
 from utils.email_helpers import send_otp_email, verify_otp
+import httpx
 
 router = APIRouter()
+
+# Direct Supabase Auth REST API base URL
+_AUTH_URL = f"{settings.supabase_url}/auth/v1"
+_HEADERS = {
+    "apikey": settings.supabase_key,
+    "Content-Type": "application/json",
+}
 
 
 @router.post("/register")
@@ -49,24 +58,51 @@ async def register(data: RegisterRequest):
 
 @router.post("/login")
 async def login(data: LoginRequest, request: Request):
-    """Login with email and password."""
+    """Login with email and password — stateless, no shared client session."""
     client_ip = get_client_ip(request)
     check_rate_limit(client_ip)
 
     try:
-        response = supabase.auth.sign_in_with_password({
-            "email": data.email,
-            "password": data.password,
-        })
+        # Use direct HTTP call to Supabase Auth REST API instead of shared client
+        # This is completely stateless — no session stored on the server
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{_AUTH_URL}/token?grant_type=password",
+                headers=_HEADERS,
+                json={
+                    "email": data.email,
+                    "password": data.password,
+                },
+                timeout=15.0,
+            )
 
-        if not response.user or not response.session:
+        if resp.status_code != 200:
+            record_failed_attempt(client_ip)
+            # Extract Supabase's actual error message for debugging
+            error_detail = "Invalid email or password"
+            try:
+                err_body = resp.json()
+                if "error_description" in err_body:
+                    error_detail = err_body["error_description"]
+                elif "msg" in err_body:
+                    error_detail = err_body["msg"]
+            except Exception:
+                pass
+            raise HTTPException(status_code=401, detail=error_detail)
+
+        auth_data = resp.json()
+        user_id = auth_data.get("user", {}).get("id")
+        access_token = auth_data.get("access_token")
+        refresh_token = auth_data.get("refresh_token")
+
+        if not user_id or not access_token:
             record_failed_attempt(client_ip)
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         clear_attempts(client_ip)
 
         # Fetch user profile for role
-        profile_result = supabase_admin.table("profiles").select("*").eq("id", response.user.id).single().execute()
+        profile_result = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
         profile = profile_result.data
 
         if not profile:
@@ -88,8 +124,8 @@ async def login(data: LoginRequest, request: Request):
             }
 
         return {
-            "access_token": response.session.access_token,
-            "refresh_token": response.session.refresh_token,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
             "mfa_required": False,
             "user": {
@@ -139,24 +175,36 @@ async def verify_otp_endpoint(data: OTPVerifyRequest):
 
 @router.post("/logout")
 async def logout(current_user: dict = Depends(get_current_user)):
-    """Logout and invalidate session."""
-    try:
-        supabase.auth.sign_out()
-        return {"message": "Logged out successfully"}
-    except Exception:
-        return {"message": "Logged out"}
+    """Logout — stateless, just return success.
+
+    The frontend discards the token on its side. The token is a short-lived JWT
+    that will expire on its own. No need to call supabase.auth.sign_out() on a
+    shared server-side client (that was the bug causing login failures).
+    """
+    return {"message": "Logged out successfully"}
 
 
 @router.post("/refresh")
 async def refresh_token(data: RefreshTokenRequest):
-    """Refresh access token using refresh token."""
+    """Refresh access token using refresh token — stateless via direct HTTP."""
     try:
-        response = supabase.auth.refresh_session(data.refresh_token)
-        if not response.session:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{_AUTH_URL}/token?grant_type=refresh_token",
+                headers=_HEADERS,
+                json={
+                    "refresh_token": data.refresh_token,
+                },
+                timeout=15.0,
+            )
+
+        if resp.status_code != 200:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        auth_data = resp.json()
         return {
-            "access_token": response.session.access_token,
-            "refresh_token": response.session.refresh_token,
+            "access_token": auth_data.get("access_token"),
+            "refresh_token": auth_data.get("refresh_token"),
             "token_type": "bearer",
         }
     except HTTPException:

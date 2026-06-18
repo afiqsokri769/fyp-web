@@ -1,8 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from models.user import ProfileUpdateRequest, PasswordChangeRequest, MFAToggleRequest
 from database import supabase_admin
+from config import settings
 from middleware.auth_middleware import get_current_user
+import httpx
 import uuid
+
+# Direct Supabase Auth REST API — avoids shared client session corruption
+_AUTH_URL = f"{settings.supabase_url}/auth/v1"
+_HEADERS = {
+    "apikey": settings.supabase_service_key,
+    "Content-Type": "application/json",
+}
 
 router = APIRouter()
 
@@ -45,8 +54,15 @@ async def change_password(data: PasswordChangeRequest, current_user: dict = Depe
         profile = supabase_admin.table("profiles").select("email").eq("id", current_user["user_id"]).single().execute()
         email = profile.data["email"]
 
-        verify = supabase_admin.auth.sign_in_with_password({"email": email, "password": data.current_password})
-        if not verify.user:
+        # Verify password via stateless HTTP call (not shared client)
+        async with httpx.AsyncClient() as client:
+            verify_resp = await client.post(
+                f"{_AUTH_URL}/token?grant_type=password",
+                headers=_HEADERS,
+                json={"email": email, "password": data.current_password},
+                timeout=15.0,
+            )
+        if verify_resp.status_code != 200:
             raise HTTPException(status_code=400, detail="Current password is incorrect")
 
         # Update password
@@ -74,8 +90,15 @@ async def toggle_mfa(data: MFAToggleRequest, current_user: dict = Depends(get_cu
         if role == "admin" and not data.enable:
             raise HTTPException(status_code=403, detail="Admin accounts must have MFA enabled")
 
-        verify = supabase_admin.auth.sign_in_with_password({"email": email, "password": data.current_password})
-        if not verify.user:
+        # Verify password via stateless HTTP call (not shared client)
+        async with httpx.AsyncClient() as client:
+            verify_resp = await client.post(
+                f"{_AUTH_URL}/token?grant_type=password",
+                headers=_HEADERS,
+                json={"email": email, "password": data.current_password},
+                timeout=15.0,
+            )
+        if verify_resp.status_code != 200:
             raise HTTPException(status_code=400, detail="Password verification failed")
 
         supabase_admin.table("profiles").update({"mfa_enabled": data.enable}).eq("id", current_user["user_id"]).execute()

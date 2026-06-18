@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models.service import ServiceCreate, ServiceUpdate, ServiceResponse, ServiceReorderRequest
-from database import supabase, supabase_admin
+from database import supabase_admin
 from middleware.auth_middleware import get_current_user, require_admin
 
 router = APIRouter()
