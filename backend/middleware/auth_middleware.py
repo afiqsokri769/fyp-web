@@ -1,8 +1,10 @@
 from fastapi import Header, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from database import supabase_admin
+from config import settings
 from typing import Optional
 import time
+import httpx
 
 security = HTTPBearer(auto_error=False)
 
@@ -46,13 +48,24 @@ async def get_current_user(
     if cached:
         return cached
 
-    # Verify token with Supabase directly — no local JWT secret needed
+    # Verify token with Supabase directly — stateless HTTP call
     try:
-        user_response = supabase_admin.auth.get_user(token)
-        if not user_response or not user_response.user:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{settings.supabase_url}/auth/v1/user",
+                headers={
+                    "apikey": settings.supabase_service_key,
+                    "Authorization": f"Bearer {token}"
+                },
+                timeout=10.0
+            )
+        if resp.status_code != 200:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
-        supabase_user = user_response.user
-        user_id = supabase_user.id
+            
+        user_data_resp = resp.json()
+        user_id = user_data_resp.get("id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
     except HTTPException:
         raise
     except Exception as e:
