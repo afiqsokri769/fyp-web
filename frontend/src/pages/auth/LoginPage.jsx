@@ -30,7 +30,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const res = await authService.login(data.email, data.password, data.remember_me)
-      const { access_token, user, mfa_required, email } = res.data
+      const { access_token, refresh_token, user, mfa_required, email } = res.data
 
       if (mfa_required) {
         navigate('/otp-verify', { state: { email } })
@@ -38,7 +38,7 @@ export default function LoginPage() {
       }
 
       // login() is synchronous — returns the normalized user immediately
-      const loggedInUser = login(user, access_token)
+      const loggedInUser = login(user, access_token, refresh_token)
 
       // Use role from the returned user object
       const role = loggedInUser?.role || user?.role || 'customer'

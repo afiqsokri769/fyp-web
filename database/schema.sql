@@ -203,6 +203,8 @@ ALTER TABLE public.time_slots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.blocked_dates ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: users can read/update own profile; admins read all
+-- NOTE: Admin policies use auth.jwt() instead of querying profiles
+-- to avoid infinite recursion (PostgreSQL 42P17).
 CREATE POLICY "Users can view own profile"
   ON public.profiles FOR SELECT
   USING (auth.uid() = id);
@@ -213,15 +215,11 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Admins can view all profiles"
   ON public.profiles FOR SELECT
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 CREATE POLICY "Admins can update all profiles"
   ON public.profiles FOR UPDATE
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Services: public read, admin write
 CREATE POLICY "Anyone can read active services"
@@ -230,9 +228,7 @@ CREATE POLICY "Anyone can read active services"
 
 CREATE POLICY "Admins can manage services"
   ON public.services FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Bookings: customers see own, admins see all
 CREATE POLICY "Customers see own bookings"
@@ -249,9 +245,7 @@ CREATE POLICY "Customers can update own bookings"
 
 CREATE POLICY "Admins manage all bookings"
   ON public.bookings FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Booking services: follow booking access
 CREATE POLICY "Customers see own booking services"
@@ -268,9 +262,7 @@ CREATE POLICY "Customers can insert booking services"
 
 CREATE POLICY "Admins manage all booking services"
   ON public.booking_services FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- FAQs and time_slots: public read
 CREATE POLICY "Public can read faqs"
@@ -279,9 +271,7 @@ CREATE POLICY "Public can read faqs"
 
 CREATE POLICY "Admins can manage faqs"
   ON public.faqs FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 CREATE POLICY "Public can read time_slots"
   ON public.time_slots FOR SELECT
@@ -293,15 +283,11 @@ CREATE POLICY "Public can read blocked_dates"
 
 CREATE POLICY "Admins can manage time_slots"
   ON public.time_slots FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 CREATE POLICY "Admins can manage blocked_dates"
   ON public.blocked_dates FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Inquiries: customers see own, admins see all, public can insert
 CREATE POLICY "Customers see own inquiries"
@@ -314,9 +300,7 @@ CREATE POLICY "Public can submit inquiries"
 
 CREATE POLICY "Admins manage all inquiries"
   ON public.inquiries FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- ------------------------------------------------
 -- STORAGE BUCKETS (run in Supabase dashboard or via API)

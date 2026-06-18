@@ -65,8 +65,8 @@ export default function OTPVerifyPage() {
     setLoading(true)
     try {
       const res = await authService.verifyOtp(email, token)
-      const { access_token, user } = res.data
-      const loggedInUser = await login(user, access_token)
+      const { access_token, refresh_token, user } = res.data
+      const loggedInUser = await login(user, access_token, refresh_token)
       const redirect = loggedInUser?.role === 'admin' ? ROUTES.ADMIN : ROUTES.DASHBOARD
       navigate(redirect, { replace: true })
     } catch (err) {
