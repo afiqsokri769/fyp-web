@@ -156,6 +156,7 @@ async def verify_otp_endpoint(data: OTPVerifyRequest):
 
         return {
             "access_token": result["access_token"],
+            "refresh_token": result.get("refresh_token"),
             "token_type": "bearer",
             "mfa_required": False,
             "user": {
