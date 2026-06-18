@@ -141,7 +141,9 @@ async def login(data: LoginRequest, request: Request):
         raise
     except Exception as e:
         record_failed_attempt(client_ip)
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=401, detail=f"Login failed: {str(e)}")
 
 
 @router.post("/verify-otp")
